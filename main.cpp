@@ -10,7 +10,7 @@ void quit();
 void quit() {
 	isQuit = true;
 	system("cls");
-	cout << "Terima kasih sudah menggunakan layanan xGate Warnet.\n\n"; // @keboooooo ingpokan nama warnet yang terkenal+pendek (edit dikit biar ga sama)
+	cout << "Terima kasih sudah menggunakan layanan xGate Warnet.\n\n";
 	exit(0);
 }
 
