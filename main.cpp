@@ -60,7 +60,7 @@ char getch() {
 }
 #endif
 
-// Fungsi clearscreen (crossplatform)
+// Fungsi ClearScreen (crossplatform)
 #ifdef _WIN32 // Memeriksa apakah sistem operasi yang digunakan adalah Windows
 #include <cstdlib>
 void clearScreen() { // Fungsi untuk membersihkan layar konsol
