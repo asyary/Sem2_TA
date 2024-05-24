@@ -1,4 +1,6 @@
 #include <iostream>
+#include <fstream>
+
 using namespace std;
 
 // Global variables
@@ -34,11 +36,14 @@ void delay(int milliseconds) {
 // Fungsi getch (crossplatform)
 #ifdef _WIN32 // Memeriksa apakah sistem operasi yang digunakan adalah Windows
 #include <conio.h>
+char getChar() { // getch overloads function di conio.h soalnya
+	 return _getch(); // getch is deprecated, use _getch instead
+}
 #else
 #include <termios.h>
 #include <unistd.h>
 
-char getch() {
+char getChar() {
     char buf = 0;
     struct termios old;
     fflush(stdout);
@@ -63,12 +68,12 @@ char getch() {
 // Fungsi ClearScreen (crossplatform)
 #ifdef _WIN32 // Memeriksa apakah sistem operasi yang digunakan adalah Windows
 #include <cstdlib>
-void clearScreen() { // Fungsi untuk membersihkan layar konsol
+void cls() { // Fungsi untuk membersihkan layar konsol
     system("cls");
 }
 #else
 #include <cstdio>
-void clearScreen() {
+void cls() {
     system("clear");
 }
 #endif
