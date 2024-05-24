@@ -109,16 +109,76 @@ bool authenticateAdmin() {
 
 // Fungsi untuk menampilkan menu admin
 void showAdminMenu() {
+    int choice;
     clearScreen();
-    cout << "Menu Admin" << endl;
-    // serah apa aja :v
+    do{
+        cout << "Menu Admin" << endl;
+        cout << "1. Tambah PC" << endl;
+        cout << "2. List PC" << endl;
+        cout << "3. Buat User" << endl;
+        cout << "4. Tambah Jam (Untuk Member)" << endl;
+        cout << "5. Tambah Jam (Normal)" << endl;
+        cout << "0. Keluar" << endl;
+        cout << "Pilihan: ";
+        choice = getch();
+        switch (choice) {
+            case '1':
+                cout << "Tambah PC" << endl;
+                break;
+            case '2':
+                cout << "List PC" << endl;
+                break;
+            case '3':
+                cout << "Buat User" << endl;
+                break;
+            case '4':
+                cout << "Tambah Jam (Member)" << endl;
+                break;
+            case '5':
+                cout << "Tambah Jam (Normal)" << endl;
+                break;
+            case '0':
+                isQuit = true;
+                break;
+            default:
+                cout << "Pilihan tidak valid." << endl;
+                break;
+        }
+    } while (!isQuit);
+    
 }
 
 // Fungsi untuk menampilkan menu user
 void showUserMenu() {
+    int choice;
     clearScreen();
-    cout << "Menu User" << endl;
-    // serah apa aja :v
+    do{
+        cout << "Menu User" << endl;
+        cout << "1. Login Member" << endl;
+        cout << "2. Login Normal" << endl;
+        cout << "3. List PC" << endl;
+        cout << "0. Keluar" << endl;
+        cout << "Pilihan: ";
+        choice = getch();
+        switch (choice) {
+            case '1':
+                cout << "Login Member" << endl;
+                break;
+            case '2':
+                cout << "Login Normal" << endl;
+                break;
+            case '3':
+                cout << "List PC" << endl;
+                break;
+            case '0':
+                isQuit = true;
+                break;
+            default:
+                cout << "Pilihan tidak valid." << endl;
+                break;
+        }
+    } while (!isQuit);
+    
 }
 
 
