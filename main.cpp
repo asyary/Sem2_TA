@@ -39,6 +39,11 @@ void errorHandler(string err) {
 	pause();
 }
 
+string hashPass(string str) {
+	string salt = "m8A*w@ok:cK#";
+	return picosha2::hash256_hex_string(str+salt);
+}
+
 void daftar() {
 	cls();
 }
