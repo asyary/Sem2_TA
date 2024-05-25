@@ -8,18 +8,101 @@
 using namespace std;
 using namespace std::this_thread;
 
+// Enums
+enum Menu {
+	MAIN_MENU,
+	ADMIN_MENU,
+	USER_MENU
+};
+
 // Global variables
 bool isQuit = false, doneLoading = false, doneReading = false;
+int totalUser = 0;
 
 // Prototypes
 void quit();
 
-void menu(int num) {
+char optionHandler() {
+	char pil = getChar();
+	if (pil == 3 || pil == 4 || pil == 24 || pil == 26) {
+		quit(); // Handles CTRL+C, CTRL+D, CTRL+X, CTRL+Z
+	}
+	return pil;
+}
 
+void errorHandler(string err) {
+	if (isQuit) {
+		return;
+	}
+	cls();
+	cout << "==== ERROR ====\n\n" + err + "\n\n";
+	pause();
+}
+
+void daftar() {
+	cls();
+}
+
+void login() {
+	cls();
+}
+
+void menu(Menu dest) {
+	cls();
+	switch (dest) {
+		case MAIN_MENU: {
+			string mainMenu = "==== Selamat Datang ====\n\n1. Login\n2. Daftar\n0. Keluar\n\n";
+			cout << mainMenu << "Masukkan pilihan : ";
+			char pil = optionHandler();
+			switch (pil) {
+				case '1':
+					login();
+					break;
+
+				case '2':
+					daftar();
+					break;
+					
+				default:
+					cout << "Pilihan invalid!\n";
+					pause();
+					menu(MAIN_MENU);
+					break;
+			}
+		}
+		break;
+	}
+}
+
+void createDB() {
+	// This function should ONLY be callled once
+	mkdir("data");
+	ofstream tulisUser("./data/user.txt");
+	tulisUser << 0;
+	tulisUser.close();
+	doneReading = true;
+	return;
 }
 
 void readDB() {
+	ifstream bacaUser("./data/user.txt");
+	if (bacaUser.fail()) {
+		createDB();
+		return;
+	}
+	bacaUser >> totalUser;
+	// nama -> username -> password -> level -> hasBilling
+	for (int i = 0; i < totalUser; i++) {
+		string nama, username, password, level;
+		bool hasBilling;
+		bacaUser.ignore(); // pesky newline
+		getline(bacaUser, nama);
+		bacaUser >> username >> password >> level >> hasBilling;
+	}
+	bacaUser.close();
+	// ADD MORE STUFF
 	doneReading = true;
+	return;
 }
 
 void loadingScr() {
@@ -49,7 +132,7 @@ void greet() {
 )";
 	cout << banner << "\nSelamat datang di aplikasi xGate Warnet!\n\n";
 	pause();
-	menu(1);
+	menu(MAIN_MENU);
 }
 
 void quit() {
