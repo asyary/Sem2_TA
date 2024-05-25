@@ -1,6 +1,17 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+// Fungsi pause (crossplatform)
+#ifdef _WIN32
+void pause() {
+	 system("pause");
+}
+#else
+void pause() {
+	system("read -rsp $'Press any key to continue...' -n 1 key");
+}
+#endif
+
 // Fungsi delay (crossplatform)
 #ifdef _WIN32 // Memeriksa apakah sistem operasi yang digunakan adalah Windows
 #include <windows.h> 
