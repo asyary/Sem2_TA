@@ -12,6 +12,14 @@ void pause() {
 }
 #endif
 
+void mkdir(string path) {
+	#if defined(_WIN32)
+		system(("mkdir " + path).c_str());
+	#else
+		system(("mkdir -p " + path).c_str());
+	#endif
+}
+
 // Fungsi delay (crossplatform)
 #ifdef _WIN32 // Memeriksa apakah sistem operasi yang digunakan adalah Windows
 #include <windows.h> 
