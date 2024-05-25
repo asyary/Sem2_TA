@@ -12,13 +12,13 @@
 /:::=======:::\`\`\   |__|/ \|__|
 `"""""""""""""`  '-'
 ```
-Project UAS kelompok 3 TI E '23 UNESA\
+Project tugas akhir TI E '23 UNESA\
 Membuat mockup sistem manajemen internet cafe
 [Link GitHub Repo](https://github.com/asyary/Sem2_TA)
 
 ## Installation
 
-Use the GNU g++ compiler to compile main.cpp.
+Use the GNU g++ compiler to compile main.cpp
 
 ```bash
 g++ main -o main; ./main
