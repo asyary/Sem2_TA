@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <thread>
+#include <csignal>
 
 #include "include/utils.h"
 #include "include/sha256.h"
