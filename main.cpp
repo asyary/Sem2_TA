@@ -1,15 +1,21 @@
+// IF THE PROGRAM CRASHES, PLEASE RE-RUN THE PROGRAM 3-4 TIMES
+// I (we) have absolutely, and I mean, devastatingly mind-blowingly
+// no idea why the program SOMETIMES crashes on first-several runs UNPREDICTABLY
 #include <iostream>
 #include <fstream>
 #include <thread>
 #include <regex>
 #include <cmath>
 #include <csignal>
+#include <iomanip>
 
 #include "include/utils.h"
 #include "include/sha256.h"
 
 using namespace std;
 using namespace std::this_thread;
+
+// We tried to make it cross-platform, but it's somehow not working on Linux (but it works on WSL???)
 
 // Enums
 enum Menu {
@@ -35,6 +41,11 @@ struct NodeUser {
 	NodeUser *next {NULL};
 };
 
+struct NodeQueue {
+	string nama;
+	NodeQueue *next {NULL};
+} *headQueue, *tailQueue;
+
 struct ComputerTree {
 	int jumlahChild = 0;
 	string nama, jenis;
@@ -45,7 +56,7 @@ struct ComputerTree {
 
 // Global variables
 bool isQuit = false, doneLoading = false, doneReading = false;
-int totalUser = 0, totalRouter = 0;
+int totalUser = 0, totalRouter = 0, totalQueue = 0;
 const int hashMapSize = 2048;
 NodeUser *hashMapUser;
 User currentUser;
@@ -56,6 +67,8 @@ void quit();
 void menu(Menu dest);
 void updateUserDB();
 void updatePCDB();
+char inputHandler();
+string inputHandlerStr(InputType type);
 
 void showPCData() {
     cls();
@@ -77,6 +90,43 @@ void showPCData() {
     }
     sysPause();
 	 return menu(ADMIN_MENU);
+}
+
+void deleteQueue() {
+	ofstream tulisQueue("./data/queue.txt", ios::trunc);
+	NodeQueue* delQ = headQueue;
+	headQueue = headQueue->next;
+	delete delQ;
+	totalQueue--;
+	tulisQueue << totalQueue << "\n";
+	NodeQueue* temp = headQueue;
+	while (temp != NULL) {
+		tulisQueue << temp->nama << "\n";
+		temp = temp->next;
+	}
+	tulisQueue.close();
+}
+
+void konfirmasiBilling() {
+	cls();
+	cout << "==== Konfirmasi Billing ====\n\n";
+	if (headQueue == NULL || tailQueue == NULL) {
+		cout << "Tidak ada antrian!\n";
+		sysPause();
+		return menu(ADMIN_MENU);
+	}
+	cout << "Antrian:\n";
+	NodeQueue* temp = headQueue;
+	cout << temp->nama + "\n";
+	cout << "Konfirmasi pembayaran? (y/n) : ";
+	char konfirmasi = inputHandler();
+	if (konfirmasi != 'y' && konfirmasi != 'Y') {
+		return menu(ADMIN_MENU);
+	}
+	cout << "\n\nPembayaran " + temp->nama + " berhasil dikonfirmasi!\n";
+	deleteQueue();
+	sysPause();
+	return konfirmasiBilling();
 }
 
 void treatAngka(double saldo, string* saldoStr, int* desimal) {
@@ -179,6 +229,30 @@ int hashFunction(string key) {
 	// but I'll encapsulate part of key in sha256, so all g~
 }
 
+void addQueue(ComputerTree* pc) {
+	ofstream tulisQueue("./data/queue.txt", ios::trunc);
+	totalQueue++;
+	tulisQueue << totalQueue << "\n";
+	if (headQueue == NULL || tailQueue == NULL) {
+		headQueue = new NodeQueue;
+		headQueue->nama = pc->nama;
+		tulisQueue << headQueue->nama << "\n";
+		tailQueue = headQueue;
+	} else {
+		NodeQueue* newNode = new NodeQueue;
+		newNode->nama = pc->nama;
+		NodeQueue* temp = headQueue;
+		while (temp->next != tailQueue) {
+			tulisQueue << temp->nama << "\n";
+			temp = temp->next;
+		}
+		tulisQueue << temp->nama << "\n";
+		tailQueue->next = newNode;
+		tailQueue = newNode;
+		tulisQueue << newNode->nama << "\n";
+	}
+}
+
 void pesanPC() {
 	cls();
 	cout << "==== Pesan PC ====\n\n";
@@ -238,13 +312,14 @@ void pesanPC() {
 	string hargaStr;
 	int desimal;
 	treatAngka(harga, &hargaStr, &desimal);
-	cout << "\nTotal harga: Rp " + hargaStr + "," + to_string(desimal) + "\n\n";
+	cout << "\nTotal harga: Rp " + hargaStr + "," << setw(2) << setfill('0') << desimal << "\n\n";
 	cout << "Konfirmasi pembayaran? (y/n) : ";
 	char konfirmasi = inputHandler();
 	if (konfirmasi != 'y' && konfirmasi != 'Y') {
 		return menu(USER_MENU);
 	}
 	PCdipesan->isUsed = true;
+	addQueue(PCdipesan);
 	currentUser.hasBilling = true;
 	updatePCDB();
 	updateUserDB();
@@ -492,7 +567,7 @@ void menu(Menu dest) {
 					break;
 
 				case '3':
-					// konfirmasiBilling();
+					konfirmasiBilling();
 					break;
 
 				case '0':
@@ -582,6 +657,26 @@ void readDB() {
 		server->jumlahChild = jumlahRouter;
 		bacaPC.close();
 		i++;
+	}
+	// read queue
+	ifstream bacaQueue("./data/queue.txt");
+	if (bacaQueue.fail()) {
+		errorHandler("Gagal membaca data antrian!");
+		return quit();
+	}
+	bacaQueue >> totalQueue;
+	string nama;
+	for (int i = 0; i < totalQueue; i++) {
+		bacaQueue >> nama;
+		NodeQueue* newNode = new NodeQueue;
+		newNode->nama = nama;
+		if (headQueue == NULL || tailQueue == NULL) {
+			headQueue = newNode;
+			tailQueue = headQueue;
+		} else {
+			tailQueue->next = newNode;
+			tailQueue = newNode;
+		}
 	}
 	doneReading = true;
 	return;
