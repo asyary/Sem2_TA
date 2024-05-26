@@ -49,7 +49,7 @@ int totalUser = 0, totalRouter = 0;
 const int hashMapSize = 2048;
 NodeUser *hashMapUser;
 User currentUser;
-ComputerTree server; // initiate in init
+ComputerTree* server = new ComputerTree; // initiate in init
 
 // Prototypes
 void quit();
@@ -59,11 +59,9 @@ void updateUserDB();
 void showPCData() {
     cls();
     cout << "==== Daftar PC ====\n\n";
-    ComputerTree* temp = &server;
+    ComputerTree* temp = server->child;
     while (temp != NULL) {
         cout << "Nama: " << temp->nama << "\n";
-        cout << "Jenis: " << temp->jenis << "\n";
-        cout << "Digunakan: " << (temp->isUsed ? "Ya" : "Tidak") << "\n";
         if (temp->child != NULL) {
             cout << "Anak PC:\n";
             ComputerTree* child = temp->child;
@@ -256,7 +254,7 @@ void daftar(string nama = "", string username = "") {
 	}
 	totalUser++;
 	updateUserDB();
-	cout << "\n\nPendaftaran berhasil!\n" << newUser.password << "\n";
+	cout << "\n\nPendaftaran berhasil!\n";
 	system("pause");
 	return menu(MAIN_MENU);
 }
@@ -326,7 +324,7 @@ void menu(Menu dest) {
 
 		case USER_MENU: {
 			cout << "==== Selamat datang di xGate, " + currentUser.nama + " ====\n\n";
-			cout << "1. Pesan PC\n2.Tambah billing\n3. Cek billing\n0. Keluar\n\nMasukkan pilihan : ";
+			cout << "1. Pesan PC\n2. Tambah billing\n3. Cek billing\n0. Keluar\n\nMasukkan pilihan : ";
 			char pil = '\0';
 			pil = inputHandler();
 			switch (pil) {
@@ -343,13 +341,17 @@ void menu(Menu dest) {
 
 		case ADMIN_MENU: {
 			cout << "==== Selamat datang di xGate, " + currentUser.nama + " ====\n\n";
-			cout << "1. Lihat daftar PC\n0. Keluar\n\nMasukkan pilihan : ";
+			cout << "1. Lihat daftar PC\n2. Tambah PC\n0. Keluar\n\nMasukkan pilihan : ";
 			char pil = '\0';
 			pil = inputHandler();
 			switch (pil) {
 				case '1':
 					showPCData();
 					menu(ADMIN_MENU);
+					break;
+
+				case '2':
+					// addPC();
 					break;
 
 				case '0':
@@ -367,30 +369,11 @@ void menu(Menu dest) {
 	}
 }
 
-void createDB() {
-	// This function should ONLY be callled once
-	mkdir("data");
-	ofstream tulisUser("./data/user.txt");
-	tulisUser << 1;
-	// ADD ADMIN USER
-	tulisUser << "Admin\nadmin\n" << hashPass("admin") << "\nadmin\n0";
-	tulisUser.close();
-	ofstream tulisPC("./data/pc.txt");
-	tulisPC << 2;
-	tulisPC << "\n5\n";
-	for (int i = 0; i < 5; i++) {
-		tulisPC << "PC1_" << i+1 << "\n";
-	
-	}
-	doneReading = true;
-	return;
-}
-
 void readDB() {
 	ifstream bacaUser("./data/user.txt");
 	if (bacaUser.fail()) {
-		createDB();
-		return;
+		errorHandler("Gagal membaca data user!");
+		return quit();
 	}
 	bacaUser >> totalUser;
 	// nama -> username -> password -> level -> hasBilling
@@ -420,52 +403,59 @@ void readDB() {
 		}
 	}
 	bacaUser.close();
-	ifstream bacaPC("./data/pc.txt");
-	if (bacaPC.fail()) { // n-, nah, th-, this can't be
-		errorHandler("Error: DB PC tidak ditemukan!");
-	}
-	// jumlah child -> nama -> jenis -> isUsed -> child
-	bacaPC >> totalRouter;
-	for (int i = 0; i < totalRouter; i++) {
-		int jumlahChild;
-		string nama, jenis;
-		bool isUsed;
-		bacaPC >> jumlahChild;
-		ComputerTree* newNode = new ComputerTree;
-		bacaPC.ignore(); // pesky newline
-		getline(bacaPC, nama);
-		bacaPC >> jenis >> isUsed;
-		newNode->nama = nama;
-		newNode->jenis = jenis;
-		newNode->isUsed = isUsed;
-		ComputerTree* temp = newNode;
-		for (int j = 0; j < jumlahChild; j++) {
-			ComputerTree* childNode = new ComputerTree;
-			bacaPC.ignore(); // pesky newline
-			getline(bacaPC, childNode->nama);
-			bacaPC >> childNode->jenis >> childNode->isUsed;
-			if (temp->child == NULL) {
-				temp->child = childNode;
+	int i = 1;
+	while (true) {
+		ifstream bacaPC("./data/server/router" + to_string(i) + "/pc.txt");
+		if (bacaPC.fail()) {
+			break;
+		}
+		ComputerTree* newRouter = new ComputerTree;
+		bacaPC >> newRouter->jumlahChild;
+		newRouter->nama = "Router" + to_string(i);
+		newRouter->jenis = "Router";
+		for (int j = 0; j < newRouter->jumlahChild; j++) {
+			ComputerTree* newPC = new ComputerTree;
+			newPC->nama = "PC" + to_string(i) + "_" + to_string(j+1);
+			newPC->jenis = "PC";
+			bacaPC >> newPC->isUsed;
+			if (newRouter->child == NULL) {
+				newRouter->child = newPC;
 			} else {
-				ComputerTree* tempChild = temp->child;
-				while (tempChild->next != NULL) {
-					tempChild = tempChild->next;
+				ComputerTree* temp = newRouter->child;
+				while (temp->next != NULL) {
+					temp = temp->next;
 				}
-				tempChild->next = childNode;
+				temp->next = newPC;
 			}
 		}
-		while (server.child != NULL) {
-			server.child = server.child->next;
+		if (server->child == NULL) {
+			server->child = newRouter;
+		} else {
+			ComputerTree* temp = server->child;
+			while (temp->next != NULL) {
+				temp = temp->next;
+			}
+			temp->next = newRouter;
 		}
-		server.child = newNode;
+		bacaPC.close();
+		i++;
 	}
-	bacaPC.close();
 	doneReading = true;
 	return;
 }
 
 void updateUserDB() {
-
+	ofstream tulisUser("./data/user.txt", ios::trunc);
+	tulisUser << totalUser << "\n";
+	for (int i = 0; i < hashMapSize; i++) {
+		NodeUser* temp = &hashMapUser[i];
+		while (temp != NULL) {
+			if (!temp->data.username.empty()) {
+				tulisUser << temp->data.nama << "\n" << temp->data.username << "\n" << temp->data.password << "\n" << temp->data.level << "\n" << temp->data.hasBilling << "\n";
+			}
+			temp = temp->next;
+		}
+	}
 }
 
 void loadingScr() {
@@ -514,8 +504,8 @@ void init() {
 		// init hashmap
 		hashMapUser = new NodeUser[hashMapSize];
 		// init server
-		server.nama = "Main Server";
-		server.jenis = "Main Server";
+		server->nama = "Main Server";
+		server->jenis = "Main Server";
 		delay(2500); // minimum loading time 2.5 detik
 		doneLoading = true;
 	});
