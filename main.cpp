@@ -28,6 +28,8 @@ struct NodeUser {
 // Global variables
 bool isQuit = false, doneLoading = false, doneReading = false;
 int totalUser = 0;
+const int hashMapSize = 2048;
+NodeUser *hashMapUser;
 User currentUser;
 
 // Prototypes
@@ -166,6 +168,8 @@ void init() {
 	thread t1(loadingScr);
 	thread t2(readDB);
 	thread t3([]() { // lambda function uhuy
+		// init hashmap
+		hashMapUser = new NodeUser[hashMapSize];
 		delay(2500); // minimum loading time 2.5 detik
 		doneLoading = true;
 	});
