@@ -56,6 +56,29 @@ void quit();
 void menu(Menu dest);
 void updateUserDB();
 
+void showPCData() {
+    cls();
+    cout << "==== Daftar PC ====\n\n";
+    ComputerTree* temp = &server;
+    while (temp != NULL) {
+        cout << "Nama: " << temp->nama << "\n";
+        cout << "Jenis: " << temp->jenis << "\n";
+        cout << "Digunakan: " << (temp->isUsed ? "Ya" : "Tidak") << "\n";
+        if (temp->child != NULL) {
+            cout << "Anak PC:\n";
+            ComputerTree* child = temp->child;
+            while (child != NULL) {
+                cout << "- " << child->nama << " (" << child->jenis << ") "
+                     << (child->isUsed ? "Digunakan" : "Tidak Digunakan") << "\n";
+                child = child->next;
+            }
+        }
+        cout << "\n";
+        temp = temp->next;
+    }
+    sysPause();
+}
+
 void treatAngka(double saldo, string* saldoStr, int* desimal) {
 	int newSaldo = saldo; // reminder to always round by 2 decimal places
 	*saldoStr = to_string(newSaldo); // always setw(2) << setfill('0')
@@ -319,7 +342,26 @@ void menu(Menu dest) {
 		break;
 
 		case ADMIN_MENU: {
+			cout << "==== Selamat datang di xGate, " + currentUser.nama + " ====\n\n";
+			cout << "1. Lihat daftar PC\n0. Keluar\n\nMasukkan pilihan : ";
+			char pil = '\0';
+			pil = inputHandler();
+			switch (pil) {
+				case '1':
+					showPCData();
+					menu(ADMIN_MENU);
+					break;
 
+				case '0':
+					quit();
+					break;
+
+				default:
+					cout << "Pilihan invalid!\n";
+					sysPause();
+					menu(ADMIN_MENU);
+					break;
+			}
 		}
 		break;
 	}
