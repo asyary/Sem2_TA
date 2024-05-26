@@ -9,6 +9,7 @@
 #include <csignal>
 #include <iomanip>
 
+/// Utils for cross-platform compatibility (not really)
 #include "include/utils.h"
 #include "include/sha256.h"
 
@@ -17,35 +18,47 @@ using namespace std::this_thread;
 
 // We tried to make it cross-platform, but it's somehow not working on Linux (but it works on WSL???)
 
-// Enums
+/// Enum for menus
 enum Menu {
 	MAIN_MENU,
 	ADMIN_MENU,
 	USER_MENU
 };
 
+/// Enum for input types
 enum InputType {
-	NAME, // name can contain anything, A-Za-z0-9 and \s whitespace
-	USERNAME, // username can only contain A-Za-z0-9
-	PASSWORD, // password can contain anything, ^[\x20-\x7E]+$
+	/// name can contain anything, A-Za-z0-9 and \s whitespace
+	NAME, 
+	/// username can only contain A-Za-z0-9
+	USERNAME, 
+	/// password can contain anything, ^[\x20-\x7E]+$
+	PASSWORD, 
 };
 
 // Structs
+/// User struct
+/// Struct for user data, contains nama, username, password, level, and hasBilling
 struct User {
 	string nama, username, password, level = "user";
 	bool hasBilling {0};
 };
 
+/// NodeUser struct
+/// Struct for user node, contains User data and next node
 struct NodeUser {
 	User data;
 	NodeUser *next {NULL};
 };
 
+/// NodeQueue struct
+/// Struct for queue node, contains nama and next node
 struct NodeQueue {
 	string nama;
 	NodeQueue *next {NULL};
 } *headQueue, *tailQueue;
 
+/// ComputerTree struct
+/// Struct for computer tree, contains jumlahChild, nama, jenis, isUsed, next node, and child node
 struct ComputerTree {
 	int jumlahChild = 0;
 	string nama, jenis;
@@ -70,6 +83,8 @@ void updatePCDB();
 char inputHandler();
 string inputHandlerStr(InputType type);
 
+/// Function to show PC data
+/// Shows all the available PCs
 void showPCData() {
     cls();
     cout << "==== Daftar PC ====\n\n";
@@ -92,6 +107,8 @@ void showPCData() {
 	 return menu(ADMIN_MENU);
 }
 
+/// Function to delete queue
+/// Deletes the first queue
 void deleteQueue() {
 	ofstream tulisQueue("./data/queue.txt", ios::trunc);
 	NodeQueue* delQ = headQueue;
@@ -107,6 +124,8 @@ void deleteQueue() {
 	tulisQueue.close();
 }
 
+/// Function to confirm billing
+/// Confirms the billing by admin
 void konfirmasiBilling() {
 	cls();
 	cout << "==== Konfirmasi Billing ====\n\n";
@@ -129,6 +148,11 @@ void konfirmasiBilling() {
 	return konfirmasiBilling();
 }
 
+/// Function to treat angka
+/// Treats the number to be formatted with dots and 2 decimal places
+/// @param saldo 
+/// @param saldoStr 
+/// @param desimal 
 void treatAngka(double saldo, string* saldoStr, int* desimal) {
 	int newSaldo = saldo; // reminder to always round by 2 decimal places
 	*saldoStr = to_string(newSaldo); // always setw(2) << setfill('0')
@@ -150,6 +174,9 @@ void treatAngka(double saldo, string* saldoStr, int* desimal) {
 	return;
 }
 
+/// Fancy smanchy function to handle inputs
+/// Handles CTRL+C, CTRL+D, CTRL+X, CTRL+Z
+/// @return 
 char inputHandler() {
 	char pil = getChar();
 	if (pil == 3 || pil == 4 || pil == 24 || pil == 26) {
@@ -158,6 +185,10 @@ char inputHandler() {
 	return pil;
 }
 
+/// Even more fancy schmancies, woohoo
+/// Handles input for strings with input type and regex
+/// @param type 
+/// @return 
 string inputHandlerStr(InputType type) {
 	char ch = '\0';
 	string str = "";
@@ -206,6 +237,8 @@ string inputHandlerStr(InputType type) {
 	return str;
 }
 
+/// Error handler
+/// Handles error messages
 void errorHandler(string err) {
 	if (isQuit) {
 		return;
@@ -215,6 +248,8 @@ void errorHandler(string err) {
 	sysPause();
 }
 
+/// Hash function
+/// Hash function for hashing the key using custom multiplicative fibonacci hashing function
 int hashFunction(string key) {
 	// let's threw a big word here: "multiplicative fibonacci hashing function"
 	// it's just a simple hash function, but it sounds cool
@@ -229,6 +264,9 @@ int hashFunction(string key) {
 	// but I'll encapsulate part of key in sha256, so all g~
 }
 
+/// Add queue
+/// Adds the queue to the queue.txt file
+/// @param pc 
 void addQueue(ComputerTree* pc) {
 	ofstream tulisQueue("./data/queue.txt", ios::trunc);
 	totalQueue++;
@@ -253,6 +291,8 @@ void addQueue(ComputerTree* pc) {
 	}
 }
 
+/// Pesan PC
+/// Function to order a PC
 void pesanPC() {
 	cls();
 	cout << "==== Pesan PC ====\n\n";
@@ -328,6 +368,8 @@ void pesanPC() {
 	return menu(USER_MENU);
 }
 
+/// Function to add PC
+/// Adds a PC to the server
 void addPC() {
 	cls();
 	cout << "==== Tambah PC ====\n\n";
@@ -377,11 +419,17 @@ void addPC() {
 	return menu(ADMIN_MENU);
 }
 
+/// Function to hash string
+/// Hashes the string using sha256
+/// @param str 
+/// @return 
 string hashPass(string str) {
 	string salt = "m8A*w@ok:cK#";
 	return picosha2::hash256_hex_string(str+salt);
 }
 
+/// Function to validate user
+/// Validates the user using the username and hashmap with closed addressing collision handling
 User userValidation(string username) {
 	int hashResult = hashFunction(username + hashPass(username));
 	NodeUser *temp = &hashMapUser[hashResult];
@@ -395,6 +443,10 @@ User userValidation(string username) {
 	return emptyUser;
 }
 
+/// Function to daftar user
+/// Registers a user to the db and hashmap
+/// @param nama 
+/// @param username 
 void daftar(string nama = "", string username = "") {
 	cls();
 	cout << "==== Daftar ====\n\n";
@@ -459,6 +511,9 @@ void daftar(string nama = "", string username = "") {
 	return menu(MAIN_MENU);
 }
 
+/// Function to login
+/// It says it in the name
+/// @param username
 void login(string username = "") {
 	cls();
 	cout << "==== Login ====\n\nUsername : ";
@@ -493,6 +548,9 @@ void login(string username = "") {
 	}
 }
 
+/// Function to show menus
+/// Shows the menus based on the destination using menu enum
+/// @param dest 
 void menu(Menu dest) {
 	cls();
 	switch (dest) {
@@ -585,6 +643,8 @@ void menu(Menu dest) {
 	}
 }
 
+/// Function to read database
+/// Reads the database from the user.txt and pc.txt files, and queues from queue.txt
 void readDB() {
 	ifstream bacaUser("./data/user.txt");
 	if (bacaUser.fail()) {
@@ -682,6 +742,8 @@ void readDB() {
 	return;
 }
 
+/// Function to update PCDB
+/// Updates the PC database
 void updatePCDB() {
 	ComputerTree* temp = server->child;
 	int i = 1;
@@ -699,6 +761,8 @@ void updatePCDB() {
 	}
 }
 
+/// Function to update userDB
+/// Updates the user database
 void updateUserDB() {
 	ofstream tulisUser("./data/user.txt", ios::trunc);
 	tulisUser << totalUser << "\n";
@@ -713,6 +777,8 @@ void updateUserDB() {
 	}
 }
 
+/// Function to show loading screen
+/// Shows the loading screen with a spinner
 void loadingScr() {
 	char spinner[4] = {'|', '/', '-', '\\'};
 	int counter  = 0;
@@ -724,6 +790,8 @@ void loadingScr() {
 	}
 }
 
+/// Function to greet
+/// Greets the user with ascii art banner
 void greet() {
 	cls();
 	string banner = R"(
@@ -743,6 +811,8 @@ void greet() {
 	menu(MAIN_MENU);
 }
 
+/// Function to quit
+/// Quits the program gracefully
 void quit() {
 	isQuit = true;
 	cls();
@@ -750,6 +820,8 @@ void quit() {
 	exit(0);
 }
 
+/// Initialize the program
+/// Initializes the program by reading the database, initializing the hashmap, and preparing the chef to cook (menyala abangkuh)
 void init() {
 	cls();
 	showCursor(false);
@@ -772,6 +844,9 @@ void init() {
 	return greet();
 }
 
+/// Main function
+/// If you're asking what this is, I don't know what to tell you bud
+/// @return 
 int main() {
 	atexit(quit);
 	signal(SIGINT, exit);
