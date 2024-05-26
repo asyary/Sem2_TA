@@ -1,5 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
+#include <iostream>
+using namespace std;
 
 // Fungsi pause (crossplatform)
 #ifdef _WIN32
