@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <thread>
+#include <regex>
 #include <csignal>
 
 #include "include/utils.h"
@@ -16,6 +17,13 @@ enum Menu {
 	USER_MENU
 };
 
+enum InputType {
+	NAME, // name can contain anything, A-Za-z0-9 and \s whitespace
+	USERNAME, // username can only contain A-Za-z0-9
+	PASSWORD, // password can contain anything, ^[\x20-\x7E]+$
+};
+
+// Structs
 struct User {
 	string nama, username, password, level;
 	bool hasBilling;
@@ -42,6 +50,54 @@ char inputHandler() {
 		quit(); // Handles CTRL+C, CTRL+D, CTRL+X, CTRL+Z
 	}
 	return pil;
+}
+
+string inputHandlerStr(InputType type) {
+	char ch = '\0';
+	string str = "";
+	while(ch != 13) {
+		ch = inputHandler();
+		string tempStr;
+		tempStr.append(1, ch); // what?
+		if (ch == 13) {
+			continue; // some failsafe redundancy
+		}
+		if (ch == 8) { // backspace
+			if (str.length() == 0) {
+				continue;
+			}
+			cout << "\b \b"; // ooga booga way to delete a char on screen
+			if (!str.empty()) {
+				str.pop_back();
+			}
+			continue;
+		} else if (type == USERNAME) {
+			if (!regex_match(tempStr, regex("^[a-z0-9]{1}$"))) {
+				continue;
+			}
+			if (str.length() < 20) {
+				cout << ch;
+				str += ch;
+			}
+		} else if (type == PASSWORD) {
+			if (!regex_match(tempStr, regex("^[\x20-\x7E]{1}$"))) {
+				continue;
+			}
+			if (str.length() < 20) {
+				cout << "*";
+				str += ch;
+			}
+		} else if (type == NAME) {
+			if (!regex_match(tempStr, regex("^[A-Za-z\\s']{1}$"))) {
+				continue;
+			}
+			if (str.length() < 50) { // idk, 50 seems right
+				cout << ch;
+				str += ch;
+			}
+		}
+	}
+	return str;
 }
 
 void errorHandler(string err) {
