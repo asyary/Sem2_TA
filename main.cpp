@@ -55,6 +55,7 @@ ComputerTree* server = new ComputerTree; // initiate in init
 void quit();
 void menu(Menu dest);
 void updateUserDB();
+void updatePCDB();
 
 void showPCData() {
     cls();
@@ -75,6 +76,7 @@ void showPCData() {
         temp = temp->next;
     }
     sysPause();
+	 return menu(ADMIN_MENU);
 }
 
 void treatAngka(double saldo, string* saldoStr, int* desimal) {
@@ -177,6 +179,129 @@ int hashFunction(string key) {
 	// but I'll encapsulate part of key in sha256, so all g~
 }
 
+void pesanPC() {
+	cls();
+	cout << "==== Pesan PC ====\n\n";
+	if (currentUser.hasBilling) {
+		cout << "Anda sudah memesan PC!\n";
+		sysPause();
+		return menu(USER_MENU);
+	}
+	ComputerTree* temp = server->child;
+	int i = 1;
+	while (temp != NULL) {
+		ComputerTree* pcTemp = temp->child;
+		while (pcTemp != NULL) {
+			if (!pcTemp->isUsed) {
+				cout << to_string(i) + ". " + pcTemp->nama + "\n";
+				i++;
+			}
+			pcTemp = pcTemp->next;
+		}
+		temp = temp->next;
+	}
+	cout << "0. Kembali\n\nMasukkan pilihan : ";
+	int pil = 0;
+	cin >> pil;
+	ComputerTree* PCdipesan = new ComputerTree;
+	if (pil == 0) {
+		return menu(USER_MENU);
+	} else if (pil <= i || pil > 0) {
+		// find the PC
+		ComputerTree* currentRouter = server->child;
+		ComputerTree* temp = server->child;
+		while (temp != NULL) {
+			ComputerTree* pcTemp = temp->child;
+			while (pcTemp != NULL) {
+				if (!pcTemp->isUsed) {
+					pil--;
+					if (pil == 0) {
+						PCdipesan = pcTemp;
+						break;
+					}
+				}
+				pcTemp = pcTemp->next;
+			}
+			if (pil <= 0) {
+				break;
+			}
+			temp = temp->next;
+		}
+	}
+	cls();
+	cout << "==== Pesan PC ====\n\n";
+	cout << "PC yang dipilih: " + PCdipesan->nama + "\n\n";
+	cout << "Berapa jam? : ";
+	int jam;
+	cin >> jam;
+	double harga = 3000 * jam;
+	string hargaStr;
+	int desimal;
+	treatAngka(harga, &hargaStr, &desimal);
+	cout << "\nTotal harga: Rp " + hargaStr + "," + to_string(desimal) + "\n\n";
+	cout << "Konfirmasi pembayaran? (y/n) : ";
+	char konfirmasi = inputHandler();
+	if (konfirmasi != 'y' && konfirmasi != 'Y') {
+		return menu(USER_MENU);
+	}
+	PCdipesan->isUsed = true;
+	currentUser.hasBilling = true;
+	updatePCDB();
+	updateUserDB();
+	cout << "\n\nPC " + PCdipesan->nama + " berhasil dipesan!\nSilakan membayar di kasir.\n\n";
+	sysPause();
+	return menu(USER_MENU);
+}
+
+void addPC() {
+	cls();
+	cout << "==== Tambah PC ====\n\n";
+	cout << "Masukkan jumlah PC yang diinginkan: ";
+	int jumlah, jumlahTmp, jumlahRouter, maxPC, jumlahPC;
+	cin >> jumlah;
+	jumlahTmp = jumlah;
+	jumlahRouter = server->jumlahChild;
+	maxPC = 10 * jumlahRouter;
+	ComputerTree* tmp = server->child;
+	while (tmp != NULL) {
+		jumlahPC += tmp->jumlahChild;
+		tmp = tmp->next;
+	}
+	if ((jumlahPC + jumlah) > maxPC) {
+		errorHandler("PC terlalu banyak!");
+		return menu(ADMIN_MENU);
+	} else {
+		ComputerTree* currentRouter = server->child;
+		int currentRouterInt = 1;
+		while (jumlah > 0) {
+			if (currentRouter->jumlahChild == 10) {
+				currentRouter = currentRouter->next;
+				currentRouterInt++;
+				continue;
+			}
+			ComputerTree* newPC = new ComputerTree;
+			newPC->nama = "PC" + to_string(currentRouterInt) + "_" + to_string(currentRouter->jumlahChild + 1);
+			newPC->jenis = "PC";
+			newPC->isUsed = false;
+			if (currentRouter->child == NULL) {
+				currentRouter->child = newPC;
+			} else {
+				ComputerTree* temp = currentRouter->child;
+				while (temp->next != NULL) {
+					temp = temp->next;
+				}
+				temp->next = newPC;
+			}
+			currentRouter->jumlahChild++;
+			jumlah--;
+		}
+	}
+	updatePCDB();
+	cout << "\n" + to_string(jumlahTmp) + " PC berhasil ditambahkan!\n";
+	sysPause();
+	return menu(ADMIN_MENU);
+}
+
 string hashPass(string str) {
 	string salt = "m8A*w@ok:cK#";
 	return picosha2::hash256_hex_string(str+salt);
@@ -196,7 +321,7 @@ User userValidation(string username) {
 }
 
 void daftar(string nama = "", string username = "") {
-	system("cls");
+	cls();
 	cout << "==== Daftar ====\n\n";
 	cout << "Masukkan nama \t\t\t\t: ";
 	if (nama.empty()) {
@@ -255,7 +380,7 @@ void daftar(string nama = "", string username = "") {
 	totalUser++;
 	updateUserDB();
 	cout << "\n\nPendaftaran berhasil!\n";
-	system("pause");
+	sysPause();
 	return menu(MAIN_MENU);
 }
 
@@ -324,11 +449,21 @@ void menu(Menu dest) {
 
 		case USER_MENU: {
 			cout << "==== Selamat datang di xGate, " + currentUser.nama + " ====\n\n";
-			cout << "1. Pesan PC\n2. Tambah billing\n3. Cek billing\n0. Keluar\n\nMasukkan pilihan : ";
+			cout << "1. Pesan PC\n2. Tampilkan PC\n0. Keluar\n\nMasukkan pilihan : ";
 			char pil = '\0';
 			pil = inputHandler();
 			switch (pil) {
+				case '1':
+					pesanPC();
+					break;
 				
+				case '2':
+					showPCData();
+					break;
+
+				case '0':
+					quit();
+					break;
 				
 				default:
 					cout << "Pilihan invalid!\n";
@@ -340,18 +475,24 @@ void menu(Menu dest) {
 		break;
 
 		case ADMIN_MENU: {
+			if (currentUser.level != "admin") {
+				return menu(USER_MENU);
+			}
 			cout << "==== Selamat datang di xGate, " + currentUser.nama + " ====\n\n";
-			cout << "1. Lihat daftar PC\n2. Tambah PC\n0. Keluar\n\nMasukkan pilihan : ";
+			cout << "1. Lihat daftar PC\n2. Tambah PC\n3. Konfirmasi billing\n0. Keluar\n\nMasukkan pilihan : ";
 			char pil = '\0';
 			pil = inputHandler();
 			switch (pil) {
 				case '1':
 					showPCData();
-					menu(ADMIN_MENU);
 					break;
 
 				case '2':
-					// addPC();
+					addPC();
+					break;
+
+				case '3':
+					// konfirmasiBilling();
 					break;
 
 				case '0':
@@ -403,12 +544,13 @@ void readDB() {
 		}
 	}
 	bacaUser.close();
-	int i = 1;
+	int i = 1, jumlahRouter = 0;
 	while (true) {
 		ifstream bacaPC("./data/server/router" + to_string(i) + "/pc.txt");
 		if (bacaPC.fail()) {
 			break;
 		}
+		jumlahRouter++;
 		ComputerTree* newRouter = new ComputerTree;
 		bacaPC >> newRouter->jumlahChild;
 		newRouter->nama = "Router" + to_string(i);
@@ -437,11 +579,29 @@ void readDB() {
 			}
 			temp->next = newRouter;
 		}
+		server->jumlahChild = jumlahRouter;
 		bacaPC.close();
 		i++;
 	}
 	doneReading = true;
 	return;
+}
+
+void updatePCDB() {
+	ComputerTree* temp = server->child;
+	int i = 1;
+	while (temp != NULL) {
+		ofstream tulisPC("./data/server/router" + to_string(i) + "/pc.txt", ios::trunc);
+		tulisPC << temp->jumlahChild << "\n";
+		ComputerTree* child = temp->child;
+		while (child != NULL) {
+			tulisPC << child->isUsed << "\n";
+			child = child->next;
+		}
+		tulisPC.close();
+		temp = temp->next;
+		i++;
+	}
 }
 
 void updateUserDB() {
