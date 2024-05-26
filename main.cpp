@@ -15,14 +15,25 @@ enum Menu {
 	USER_MENU
 };
 
+struct User {
+	string nama, username, password, level;
+	bool hasBilling;
+};
+
+struct NodeUser {
+	User data;
+	NodeUser *next {NULL};
+};
+
 // Global variables
 bool isQuit = false, doneLoading = false, doneReading = false;
 int totalUser = 0;
+User currentUser;
 
 // Prototypes
 void quit();
 
-char optionHandler() {
+char inputHandler() {
 	char pil = getChar();
 	if (pil == 3 || pil == 4 || pil == 24 || pil == 26) {
 		quit(); // Handles CTRL+C, CTRL+D, CTRL+X, CTRL+Z
@@ -46,6 +57,8 @@ string hashPass(string str) {
 
 void daftar() {
 	cls();
+	cout << "==== Daftar ====\n\n";
+	cout << "Masukkan nama \t\t\t\t: ";
 }
 
 void login() {
@@ -58,7 +71,7 @@ void menu(Menu dest) {
 		case MAIN_MENU: {
 			string mainMenu = "==== Selamat Datang ====\n\n1. Login\n2. Daftar\n0. Keluar\n\n";
 			cout << mainMenu << "Masukkan pilihan : ";
-			char pil = optionHandler();
+			char pil = inputHandler();
 			switch (pil) {
 				case '1':
 					login();
