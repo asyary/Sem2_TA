@@ -26,7 +26,7 @@ enum InputType {
 
 // Structs
 struct User {
-	string nama, username, password, level {0};
+	string nama, username, password, level = "user";
 	bool hasBilling {0};
 };
 
@@ -35,17 +35,47 @@ struct NodeUser {
 	NodeUser *next {NULL};
 };
 
+struct ComputerTree {
+	int jumlahChild = 0;
+	string nama, jenis;
+	bool isUsed {0};
+	ComputerTree *next {NULL};
+	ComputerTree *child {NULL};
+};
+
 // Global variables
 bool isQuit = false, doneLoading = false, doneReading = false;
-int totalUser = 0;
+int totalUser = 0, totalRouter = 0;
 const int hashMapSize = 2048;
 NodeUser *hashMapUser;
 User currentUser;
+ComputerTree server; // initiate in init
 
 // Prototypes
 void quit();
 void menu(Menu dest);
 void updateUserDB();
+
+void treatAngka(double saldo, string* saldoStr, int* desimal) {
+	int newSaldo = saldo; // reminder to always round by 2 decimal places
+	*saldoStr = to_string(newSaldo); // always setw(2) << setfill('0')
+	bool isNegatif = false;
+	if ((*saldoStr)[0] == '-') {
+		isNegatif = true;
+		saldoStr->erase(0, 1);
+	}
+	int saldoLen = saldoStr->length();
+	int jarak = 3;
+	while (saldoLen > jarak) {
+		saldoStr->insert(saldoLen - jarak, 1, '.');
+		jarak += 4; saldoLen += 1;
+	}
+	if (isNegatif) {
+		saldoStr->insert(0, "-");
+	}
+	*desimal = (double)round((saldo - newSaldo)*100);
+	return;
+}
 
 char inputHandler() {
 	char pil = getChar();
@@ -203,9 +233,9 @@ void daftar(string nama = "", string username = "") {
 	}
 	totalUser++;
 	updateUserDB();
-	cout << "\n\nPendaftaran berhasil!\n";
+	cout << "\n\nPendaftaran berhasil!\n" << newUser.password << "\n";
 	system("pause");
-	menu(MAIN_MENU);
+	return menu(MAIN_MENU);
 }
 
 void login(string username = "") {
@@ -235,7 +265,11 @@ void login(string username = "") {
 	}
 	// all checks out, set currentUser and proceed to menu
 	currentUser = user;
-	return menu(USER_MENU);
+	if (currentUser.level == "admin") {
+		return menu(ADMIN_MENU);
+	} else {
+		return menu(USER_MENU);
+	}
 }
 
 void menu(Menu dest) {
@@ -253,6 +287,10 @@ void menu(Menu dest) {
 				case '2':
 					daftar();
 					break;
+
+				case '0':
+					quit();
+					break;
 					
 				default:
 					cout << "Pilihan invalid!\n";
@@ -260,6 +298,28 @@ void menu(Menu dest) {
 					menu(MAIN_MENU);
 					break;
 			}
+		}
+		break;
+
+		case USER_MENU: {
+			cout << "==== Selamat datang di xGate, " + currentUser.nama + " ====\n\n";
+			cout << "1. Pesan PC\n2.Tambah billing\n3. Cek billing\n0. Keluar\n\nMasukkan pilihan : ";
+			char pil = '\0';
+			pil = inputHandler();
+			switch (pil) {
+				
+				
+				default:
+					cout << "Pilihan invalid!\n";
+					sysPause();
+					menu(USER_MENU);
+					break;
+			}
+		}
+		break;
+
+		case ADMIN_MENU: {
+
 		}
 		break;
 	}
@@ -271,7 +331,15 @@ void createDB() {
 	ofstream tulisUser("./data/user.txt");
 	tulisUser << 1;
 	// ADD ADMIN USER
+	tulisUser << "Admin\nadmin\n" << hashPass("admin") << "\nadmin\n0";
 	tulisUser.close();
+	ofstream tulisPC("./data/pc.txt");
+	tulisPC << 2;
+	tulisPC << "\n5\n";
+	for (int i = 0; i < 5; i++) {
+		tulisPC << "PC1_" << i+1 << "\n";
+	
+	}
 	doneReading = true;
 	return;
 }
@@ -290,9 +358,66 @@ void readDB() {
 		bacaUser.ignore(); // pesky newline
 		getline(bacaUser, nama);
 		bacaUser >> username >> password >> level >> hasBilling;
+		User newUser;
+		newUser.nama = nama;
+		newUser.username = username;
+		newUser.password = password;
+		newUser.level = level;
+		newUser.hasBilling = hasBilling;
+		int hashResult = hashFunction(username + hashPass(username));
+		NodeUser* newNode = new NodeUser;
+		newNode->data = newUser;
+		if (hashMapUser[hashResult].data.username.empty()) {
+			hashMapUser[hashResult] = *newNode;
+		} else {
+			NodeUser* temp = &hashMapUser[hashResult];
+			while (temp->next != NULL) {
+				temp = temp->next;
+			}
+			temp->next = newNode;
+		}
 	}
 	bacaUser.close();
-	// ADD MORE STUFF
+	ifstream bacaPC("./data/pc.txt");
+	if (bacaPC.fail()) { // n-, nah, th-, this can't be
+		errorHandler("Error: DB PC tidak ditemukan!");
+	}
+	// jumlah child -> nama -> jenis -> isUsed -> child
+	bacaPC >> totalRouter;
+	for (int i = 0; i < totalRouter; i++) {
+		int jumlahChild;
+		string nama, jenis;
+		bool isUsed;
+		bacaPC >> jumlahChild;
+		ComputerTree* newNode = new ComputerTree;
+		bacaPC.ignore(); // pesky newline
+		getline(bacaPC, nama);
+		bacaPC >> jenis >> isUsed;
+		newNode->nama = nama;
+		newNode->jenis = jenis;
+		newNode->isUsed = isUsed;
+		ComputerTree* temp = newNode;
+		for (int j = 0; j < jumlahChild; j++) {
+			ComputerTree* childNode = new ComputerTree;
+			bacaPC.ignore(); // pesky newline
+			getline(bacaPC, childNode->nama);
+			bacaPC >> childNode->jenis >> childNode->isUsed;
+			if (temp->child == NULL) {
+				temp->child = childNode;
+			} else {
+				ComputerTree* tempChild = temp->child;
+				while (tempChild->next != NULL) {
+					tempChild = tempChild->next;
+				}
+				tempChild->next = childNode;
+			}
+		}
+		while (server.child != NULL) {
+			server.child = server.child->next;
+		}
+		server.child = newNode;
+	}
+	bacaPC.close();
 	doneReading = true;
 	return;
 }
@@ -346,6 +471,9 @@ void init() {
 	thread t3([]() { // lambda function uhuy
 		// init hashmap
 		hashMapUser = new NodeUser[hashMapSize];
+		// init server
+		server.nama = "Main Server";
+		server.jenis = "Main Server";
 		delay(2500); // minimum loading time 2.5 detik
 		doneLoading = true;
 	});
