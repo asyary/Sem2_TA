@@ -5,11 +5,11 @@ using namespace std;
 
 // Fungsi pause (crossplatform)
 #ifdef _WIN32
-void pause() {
+void sysPause() {
 	 system("pause");
 }
 #else
-void pause() {
+void sysPause() {
 	system("read -rsp $'Press any key to continue...' -n 1 key");
 }
 #endif

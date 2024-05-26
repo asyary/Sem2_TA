@@ -50,7 +50,7 @@ void errorHandler(string err) {
 	}
 	cls();
 	cout << "==== ERROR ====\n\n" + err + "\n\n";
-	pause();
+	sysPause();
 }
 
 string hashPass(string str) {
@@ -86,7 +86,7 @@ void menu(Menu dest) {
 					
 				default:
 					cout << "Pilihan invalid!\n";
-					pause();
+					sysPause();
 					menu(MAIN_MENU);
 					break;
 			}
@@ -152,7 +152,7 @@ void greet() {
 `"""""""""""""`  '-'
 )";
 	cout << banner << "\nSelamat datang di aplikasi xGate Warnet!\n\n";
-	pause();
+	sysPause();
 	menu(MAIN_MENU);
 }
 
