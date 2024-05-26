@@ -2,6 +2,7 @@
 #include <fstream>
 #include <thread>
 #include <regex>
+#include <cmath>
 #include <csignal>
 
 #include "include/utils.h"
@@ -25,8 +26,8 @@ enum InputType {
 
 // Structs
 struct User {
-	string nama, username, password, level;
-	bool hasBilling;
+	string nama, username, password, level {0};
+	bool hasBilling {0};
 };
 
 struct NodeUser {
@@ -43,6 +44,8 @@ User currentUser;
 
 // Prototypes
 void quit();
+void menu(Menu dest);
+void updateUserDB();
 
 char inputHandler() {
 	char pil = getChar();
@@ -109,19 +112,130 @@ void errorHandler(string err) {
 	sysPause();
 }
 
+int hashFunction(string key) {
+	// let's threw a big word here: "multiplicative fibonacci hashing function"
+	// it's just a simple hash function, but it sounds cool
+	int sum = 0;
+	double inversePhi = 0.6180339887; // fancy schmancy
+	for (int i = 0; i < key.length(); i++) {
+		sum += key[i]; // sum of all ascii values
+	}
+	int hashResult = floor(double(sum*inversePhi - floor(sum*inversePhi)) * hashMapSize);
+	return hashResult;
+	// note that this hashing function is not perfect,
+	// but I'll encapsulate part of key in sha256, so all g~
+}
+
 string hashPass(string str) {
 	string salt = "m8A*w@ok:cK#";
 	return picosha2::hash256_hex_string(str+salt);
 }
 
-void daftar() {
-	cls();
-	cout << "==== Daftar ====\n\n";
-	cout << "Masukkan nama \t\t\t\t: ";
+User userValidation(string username) {
+	int hashResult = hashFunction(username + hashPass(username));
+	NodeUser *temp = &hashMapUser[hashResult];
+	while(temp != NULL) {
+		if (temp->data.username == username) {
+			return temp->data;
+		}
+		temp = temp->next;
+	}
+	User emptyUser;
+	return emptyUser;
 }
 
-void login() {
+void daftar(string nama = "", string username = "") {
+	system("cls");
+	cout << "==== Daftar ====\n\n";
+	cout << "Masukkan nama \t\t\t\t: ";
+	if (nama.empty()) {
+		nama = inputHandlerStr(NAME);
+	} else {
+		cout << nama;
+	}
+	if (nama.empty()) {
+		errorHandler("Nama tidak boleh kosong!");
+		return daftar();
+	}
+	cout << "\nMasukkan username (lowercase) \t\t: ";
+	if (username.empty()) {
+		username = inputHandlerStr(USERNAME);
+	} else {
+		cout << username;
+	}
+	if (username.empty()) {
+		errorHandler("Username tidak boleh kosong!");
+		return daftar(nama);
+	}
+	// username validation, check if it's already taken
+	User user = userValidation(username);
+	if(!user.username.empty()) {
+		errorHandler("Username sudah terdaftar!");
+		return daftar(nama);
+	}
+	cout << "\nMasukkan password \t\t\t: ";
+	string pass = inputHandlerStr(PASSWORD);
+	if (pass.empty()) {
+		errorHandler("Password tidak boleh kosong!");
+		return daftar(nama, username);
+	}
+	cout << "\nMasukkan ulang password \t\t: ";
+	string pass2 = inputHandlerStr(PASSWORD);
+	if (pass != pass2) {
+		errorHandler("Password tidak sama!");
+		return daftar(nama, username);
+	}
+	User newUser;
+	newUser.nama = nama;
+	newUser.username = username;
+	newUser.password = hashPass(pass);
+	int hashResult = hashFunction(username + hashPass(username));
+	NodeUser* newNode = new NodeUser;
+	newNode->data = newUser;
+	if (hashMapUser[hashResult].data.username.empty()) {
+		hashMapUser[hashResult] = *newNode;
+	} else {
+		NodeUser* temp = &hashMapUser[hashResult];
+		while (temp->next != NULL) {
+			temp = temp->next;
+		}
+		temp->next = newNode;
+	}
+	totalUser++;
+	updateUserDB();
+	cout << "\n\nPendaftaran berhasil!\n";
+	system("pause");
+	menu(MAIN_MENU);
+}
+
+void login(string username = "") {
 	cls();
+	cout << "==== Login ====\n\nUsername : ";
+	if (username.empty()) {
+		username = inputHandlerStr(USERNAME);
+	} else {
+		cout << username;
+	}
+	if (username.empty()) {
+		errorHandler("Username tidak boleh kosong!");
+		return login();
+	} // whoa, what?
+	// username validation
+	User user = userValidation(username);
+	if(user.username.empty()) {
+		errorHandler("Username tidak ditemukan!");
+		return login();
+	}
+	cout << "\nPassword : ";
+	string pass = inputHandlerStr(PASSWORD);
+	int userHash = hashFunction(username + hashPass(pass));
+	if (user.password != hashPass(pass)) {
+		errorHandler("Password salah!");
+		return login(username);
+	}
+	// all checks out, set currentUser and proceed to menu
+	currentUser = user;
+	return menu(USER_MENU);
 }
 
 void menu(Menu dest) {
@@ -155,7 +269,8 @@ void createDB() {
 	// This function should ONLY be callled once
 	mkdir("data");
 	ofstream tulisUser("./data/user.txt");
-	tulisUser << 0;
+	tulisUser << 1;
+	// ADD ADMIN USER
 	tulisUser.close();
 	doneReading = true;
 	return;
@@ -180,6 +295,10 @@ void readDB() {
 	// ADD MORE STUFF
 	doneReading = true;
 	return;
+}
+
+void updateUserDB() {
+
 }
 
 void loadingScr() {
