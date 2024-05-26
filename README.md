@@ -36,4 +36,4 @@ g++ main -o main; ./main
 
 ### Sidenote
 
-> ``📝`` Default login admin dengan pin 123456
+> Default login admin dengan pin 123456

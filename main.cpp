@@ -15,6 +15,7 @@
 
 using namespace std;
 using namespace std::this_thread;
+/** @file */ // Doxygen file tag, as this is a single file project
 
 // We tried to make it cross-platform, but it's somehow not working on Linux (but it works on WSL???)
 
